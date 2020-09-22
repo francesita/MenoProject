@@ -1,0 +1,157 @@
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+from nltk import TreebankWordTokenizer
+import pandas as pd
+import numpy as np
+import string
+import pickle
+import json
+import os
+import re
+
+#temporary import json for testing
+'''
+f = open('articles_data1.json', 'r')
+json_file = json.load(f)
+'''
+
+# Extract data from json files
+bodyText = []
+titles = []
+
+dic = {}
+#test list for the script
+#test = [json_file['response']['results'][0]['fields']['bodyText']]
+
+
+
+def preprocess_singledoc(text):
+    
+    '''
+    Function to preprocess documents. Preprocessing includes removing symbols in replace_with_space, removing any punctuation and removing stopwords. Returns tokenized text
+    '''
+    
+    #variable to be used for text preprocessing function preprocess_text       
+    replace_with_space = re.compile('[/(){}\[\]\|@,;]')
+    symbols_to_remove = re.compile("[^a-z _]+")
+    stop_words = set(stopwords.words('english'))
+    added_stopwords = ['one','says','like', 'said', 'say', 'would', 'go']
+    stop_words = set(list(stop_words) + added_stopwords)
+
+    #list where preprocessed text will be stored. 
+    preprocessed_text = []
+    tknzr = TreebankWordTokenizer()
+    lmtzr = WordNetLemmatizer()
+    #stemmer = PorterStemmer()
+    
+    text = text.lower()
+    text = re.sub(replace_with_space, " ", text)
+    text_tokens = tknzr.tokenize(text)
+    text_tokens = [token for token in text_tokens if token not in stop_words]
+    text_tokens = [lmtzr.lemmatize(token) for token in text_tokens]
+    text = nltk.tokenize.treebank.TreebankWordDetokenizer().detokenize(text_tokens)
+    text = re.sub(symbols_to_remove, "", text)
+    text_tokens = tknzr.tokenize(text)
+        
+    return text_tokens
+
+
+def ext_text(json_file):
+    '''
+    Function to extract the bodytext and titles of articles in json file and store it into lists bodyText and titles
+    '''
+    for i in range(len(json_file['response']['results'])):
+        bodyText.append(json_file['response']['results'][i]['fields']['bodyText'])
+        titles.append(json_file['response']['results'][i]['webTitle'])
+
+        #adding to dictionary id, webpubdate, title and text
+        art_id = json_file['response']['results'][i]['id']
+        dic[art_id] = {}
+        dic[art_id]['title'] = json_file['response']['results'][i]['webTitle']
+        dic[art_id]['webpubdate'] = json_file['response']['results'][i]['webPublicationDate']
+        dic[art_id]['text'] = json_file['response']['results'][i]['fields']['bodyText']
+        dic[art_id]['tokens'] = preprocess_singledoc(json_file['response']['results'][i]['fields']['bodyText'])
+'''
+#variable to be used for text preprocessing function preprocess_text        
+replace_with_space = re.compile('[/(){}\[\]\|@,;]')
+symbols_to_remove = re.compile("[^a-z _]+")
+stopwords = set(stopwords.words('english'))
+added_stopwords = ['like', 'said', 'say', 'would', 'go']
+stopwords = set(list(stopwords) + added_stopwords)
+'''
+def preprocess_text(list_text):
+    
+    '''
+    Function to preprocess documents. Preprocessing includes removing symbols in replace_with_space, removing any punctuation and removing stopwords. Return a 2-d list of preprocessed text
+    '''
+    
+    #variable to be used for text preprocessing function preprocess_text       
+    replace_with_space = re.compile('[/(){}\[\]\|@,;]')
+    symbols_to_remove = re.compile("[^a-z _]+")
+    stop_words = set(stopwords.words('english'))
+    added_stopwords = ['one','says','like', 'said', 'say', 'would', 'go']
+    stop_words = set(list(stop_words) + added_stopwords)
+
+    #list where preprocessed text will be stored. 
+    preprocessed_text = []
+    tknzr = TreebankWordTokenizer()
+    lmtzr = WordNetLemmatizer()
+    #stemmer = PorterStemmer()
+    for sentence in list_text:
+        text = sentence.lower()
+        text = re.sub(replace_with_space, " ", text)
+        text_tokens = tknzr.tokenize(text)
+        text_tokens = [token for token in text_tokens if token not in stop_words]
+        text_tokens = [lmtzr.lemmatize(token) for token in text_tokens]
+        text = nltk.tokenize.treebank.TreebankWordDetokenizer().detokenize(text_tokens)
+        text = re.sub(symbols_to_remove, "", text)
+        text_tokens = tknzr.tokenize(text)
+        preprocessed_text.append(text_tokens)
+        
+    return preprocessed_text
+
+
+def directory_ext(directory):
+    '''
+    iterate through directory and call ext_text function to extract corpus data
+    '''
+    for filename in os.listdir(directory):
+        #filename = os.fsdecode(file)
+        if filename.endswith('.json'):
+            json_f = open(os.path.join(directory, filename), "r")
+            json_data = json.load(json_f)
+            ext_text(json_data)
+        else:
+            continue
+
+#calling directory_Ext func
+directory = '/home/francesita/Menopause/data_guardian'
+directory_ext(directory)
+bt = preprocess_text(bodyText)
+title = preprocess_text(titles)
+
+#combining tokenized docs intp whole, untokenized but preprocessed doc
+join_body =  sum(bt, [])
+join_title = sum(title, [])
+
+bt_whole = ' '.join(token for token in join_body)
+title_whole = ' '.join(token for token in join_title)
+
+'''
+Saving preprocessed data into pickle files for later use
+'''
+
+file_body = open("body_preprocessed_tknzd.pkl", "wb")
+file_title = open("titles_preprocessed_tknzd.pkl", "wb")
+file_body_whole = open("body_prepros_whole.pkl", "wb")
+file_title_whole = open("title_prepros_whole.pkl", "wb")
+
+file_dic =  open("decades.pkl", "wb")
+
+pickle.dump(bt, file_body)
+pickle.dump(title, file_title)
+pickle.dump(bt_whole, file_body_whole)
+pickle.dump(title_whole, file_title_whole)
+pickle.dump(dic, file_dic)
