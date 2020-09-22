@@ -1,6 +1,6 @@
 #Menopause Project
 
-##Preprocessing Folder##
+## Preprocessing Folder##
 Contains the following files:
 
 - contractions.pkl
@@ -15,7 +15,7 @@ Contains the following files:
 - text_ext_json.py
     Code for converting extracted web articles to Json formatted styles. This is to have one format for later use. 
 
-##Tweet_ext Folder##
+## Tweet_ext Folder
 Contains the following files:
 
 - tweet_collect.py
@@ -24,7 +24,7 @@ Contains the following files:
 -user_tweets.py
     Using tweepy and a list of twitter handles, collects all the tweets tweeted or retweeted by the users in the list. 
 
-##Analyze_data Folder##
+## Analyze_data Folder
 Contains the following files:
 
 - word_frequency.py
