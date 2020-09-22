@@ -1,6 +1,6 @@
 # Menopause Project
 
-## Preprocessing Folder##
+## Preprocessing Folder
 Contains the following files:
 
 - contractions.pkl
